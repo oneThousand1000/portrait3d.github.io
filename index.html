@@ -1,0 +1,1009 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description"
+        content="A novel neural rendering-based framework with a novel joint geometry-appearance prior to achieve text-to-3D-portrait generation.">
+  <meta name="keywords" content="3D portrait generation, 3D-aware GANs, diffusion models">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portrait3D: Text-Guided High-Quality 3D Portrait Generation Using Pyramid Representation and GANs Prior</title>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-PYVRSFMDRL"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+
+    function gtag() {
+      dataLayer.push(arguments);
+    }
+
+    gtag('js', new Date());
+
+    gtag('config', 'G-PYVRSFMDRL');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+        rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="icon" href="./static/images/1f47b.png">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/bulma-carousel.min.js"></script>
+  <script src="./static/js/bulma-slider.min.js"></script>
+  <script src="./static/js/index.js"></script>
+
+  <style>
+            .text-color-gradient {
+                display: inline-block;
+                font-size: 10em;
+                font-weight: 700;
+                background: linear-gradient(120deg, #a6c0fe 0%, #f68084 100%);
+                background-clip: text;
+                -webkit-background-clip: text;
+                color: transparent;
+            }
+          .card {
+            background: #DFD3C3;
+            transition: 0.3s;
+            border-radius: 12px;
+            margin: 0px 5px 10px 5px;
+            padding:10px 20px 20px 20px
+            }
+
+            .container {
+              padding: -12px -16px;
+            }
+        </style>
+</head>
+<body>
+
+<nav class="navbar" role="navigation" aria-label="main navigation">
+  <div class="navbar-brand">
+    <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+      <span aria-hidden="true"></span>
+    </a>
+  </div>
+  <div class="navbar-menu">
+    <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+      <a class="navbar-item" href="https://onethousandwu.com">
+      <span class="icon">
+          <img src="static/images/me.png">
+      </span>
+      </a>
+
+      <div class="navbar-item has-dropdown is-hoverable">
+        <a class="navbar-link">
+          More Research
+        </a>
+        <div class="navbar-dropdown">
+            <a class="navbar-item" href="https://onethousandwu.com/3DPortraitGAN.github.io/">
+                3DPortraitGAN
+            </a>
+          <a class="navbar-item" href="https://onethousandwu.com/LPFF.github.io/">
+            LPFF
+          </a>
+          <a class="navbar-item" href="https://onethousandwu.com/HairMapper.github.io/">
+            HairMapper
+          </a>
+          <a class="navbar-item" href="https://onethousandwu.com/doublechinremoval.github.io/">
+            DoubleChin removal
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</nav>
+
+
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <div class="text-color-gradient title is-1 publication-title"> <span class="dnerf">Portrait3D</span>  </div>
+          <h1 class="title is-2 publication-title" >  Text-Guided High-Quality 3D Portrait Generation <br /> Using Pyramid Representation and GANs Prior</h1>
+          <div class="is-size-3 publication-conf">
+
+            <span><b>ACM Transactions on Graphics (Proceedings of SIGGRAPH 2024)</b></span>
+            </div>
+
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://onethousandwu.com/">Yiqian Wu</a><sup>1</sup>,</span>
+            <span class="author-block">
+              <a href="https://xh38.github.io/">Hao Xu</a><sup>1</sup>,</span>
+            <span class="author-block">
+              <a href="https://yuyujunjun.github.io/">Xiangjun Tang</a><sup>1</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://vision.cs.yale.edu/members/xien-chen.html">Xien Chen</a><sup>2</sup>,
+            </span>
+            <span class="author-block">
+              <a href="https://inf.ethz.ch/people/person-detail.MjYyNzgw.TGlzdC8zMDQsLTg3NDc3NjI0MQ==.html">Siyu Tang</a><sup>3</sup>,
+            </span>
+            <span class="author-block">
+              <a>Zhebin Zhang</a><sup>4</sup>,
+            </span>
+            <span class="author-block">
+              <a>Chen Li</a><sup>4</sup>,
+            </span>
+            <span class="author-block">
+              <a href="http://www.cad.zju.edu.cn/home/jin/">Xiaogang Jin*</a><sup>1</sup>
+            </span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup>State Key Lab of CAD&CG, Zhejiang University,</span>
+            <span class="author-block"><sup>2</sup>Yale University,</span>
+            <span class="author-block"><sup>3</sup>ETH Zürich,</span>
+            <span class="author-block"><sup>4</sup>OPPO US Research Center</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <!-- PDF Link. -->
+<!--              <span class="link-block">-->
+<!--                <a href=""-->
+<!--                   class="external-link button is-normal is-rounded is-dark">-->
+<!--                  <span class="icon">-->
+<!--                      <i class="fas fa-file-pdf"></i>-->
+<!--                  </span>-->
+<!--                  <span>Paper (ACM Digital Library)</span>-->
+<!--                </a>-->
+<!--              </span>-->
+
+              <span class="link-block">
+                <a href="https://arxiv.org/abs/2404.10394"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>ArXiv</span>
+                </a>
+              </span>
+
+              <span class="link-block">
+                <a href="https://drive.google.com/file/d/1LasG-urCA7rEoITHofBwEk0CloXM0DwX/view?usp=sharing"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Suppl</span>
+                </a>
+              </span>
+
+              <!-- Video Link. -->
+              <span class="link-block">
+                <a href="https://youtu.be/z7xWiD1p1_4"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-youtube"></i>
+                  </span>
+                  <span>Video</span>
+                </a>
+              </span>
+              <!-- Code Link. -->
+              <span class="link-block">
+                <a href="https://github.com/oneThousand1000/Portrait3D"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                  </a>
+              </span>
+              <!-- Dataset Link. -->
+              <span class="link-block">
+                <a href="https://huggingface.co/datasets/onethousand/Portrait3D_gallery"
+                   class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                      <i class="far fa-images"></i>
+                  </span>
+                  <span>Results</span>
+                  </a>
+                </span>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero teaser">
+
+
+     <div class="container is-4">
+    <div class="hero-body">
+       <img src="./static/images/teaser.png" alt="Pipeline">
+      <h2 class="subtitle has-text-centered">
+      </h2>
+    </div>
+  </div>
+
+  <div class="container is-4">
+    <div class="hero-body">
+      <video id="teaser" autoplay muted loop playsinline height="100%">
+        <source src="./static/videos/teaser.mp4"
+                type="video/mp4">
+      </video>
+
+      <h2 class="subtitle has-text-centered">
+        Portrait3D produces high-quality, view-consistent, realistic, and canonical 3D portraits that are in alignment with the input text prompts.
+      </h2>
+    </div>
+  </div>
+</section>
+
+
+<section class="hero is-light is-small">
+  <div class="hero-body">
+    <div class="container">
+      <div id="results-carousel" class="carousel results-carousel">
+
+         <div class="item-399-video">
+          <video poster="" id="399-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/399.mp4"
+                    type="video/mp4">
+          </video>
+           <div class="card">
+           <h2 class="subtitle has-text-justified">
+              1-year-old baby, brunette, wearing a pink dress and pearl necklace, with a Minnie mouse-themed blurred background, 50 mm, f3.0
+          </h2>
+           </div>
+        </div>
+
+        <div class="item-355-video">
+          <video poster="" id="355-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/355.mp4"
+                    type="video/mp4">
+          </video>
+          <div class="card">
+            <h2 class="subtitle has-text-justified">
+              A handsome man retro America style 1970-1990, hippie
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-359-video">
+          <video poster="" id="359-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/359.mp4"
+                    type="video/mp4">
+          </video>
+          <div class="card">
+          <h2 class="subtitle has-text-justified">
+            An India fish seller, behind his counter, sophisticated
+          </h2>
+          </div>
+        </div>
+
+        <div class="item-35-video">
+          <video poster="" id="35-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/35.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               Congolese woman, wrinkles, aged, necklace, crowded papers room, neutral colors, barren land
+            </h2>
+          </div>
+        </div>
+        <div class="item-80-video">
+          <video poster="" id="80-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/80.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               24 y.o man in (casual clothes:1.2), long brown hair, big nose, wet hair, aquiline nose, natural skin, 8k uhd, high quality, film grain, Fujifilm XT3
+            </h2>
+          </div>
+        </div>
+        <div class="item-52-video">
+          <video poster="" id="52-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/52.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A Scottish teenage girl dons a teddy bear-themed costume. She meets the camera with a mischievous gaze, her face adorned with playful makeup that accentuates her freckles and adds a touch of whimsy. Her hair is braided with colorful ribbons
+            </h2>
+          </div>
+        </div>
+        <div class="item-87-video">
+          <video poster="" id="87-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/87.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               55 y.o man, traveler clothes, standing in the forest, natural skin, 8k uhd, high quality, film grain, Fujifilm XT3, 8k uhd, high quality, film grain, Fujifilm XT3, professional Photography
+            </h2>
+          </div>
+        </div>
+        <div class="item-54-video">
+          <video poster="" id="54-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/54.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               Woman, bold, bright colours, rainbow Mohawk haircut, cyberpunk, wearing jacket, handsome, metallic necklace, realistic, soft lighting, professional Photography
+            </h2>
+          </div>
+        </div>
+        <div class="item-92-video">
+          <video poster="" id="92-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/92.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               25 y.o man in casual clothes, night, city street, (high detailed skin:1.2), 8k uhd, dslr, soft lighting, high quality, film grain, Fujifilm XT3
+            </h2>
+          </div>
+        </div>
+         <div class="item-78-video">
+          <video poster="" id="78-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/78.mp4"
+                    type="video/mp4">
+          </video>
+          <div class="card">
+            <h2 class="subtitle has-text-justified">
+               1girl, In the bustling morning market, a Muslim young teenager stands adorned in a vibrant red outfit, her hair modestly covered, Her delicate visage, with perfect pale skin, is illuminated by the gentle sunlight
+            </h2>
+          </div>
+        </div>
+        <div class="item-152-video">
+          <video poster="" id="152-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/152.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               Male wearing a classic well-fitted crew-neck t-shirt, neutral backdrop, even and flattering lighting, soft diffused lighting, confident and empowering mood, looking at camera, beard epiCPhoto
+            </h2>
+          </div>
+        </div>
+        <div class="item-79-video">
+          <video poster="" id="79-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/79.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               Dark-skinned HOT 28 y.o African woman, very short haircut style, bangs, wearing black vest, makeup, dark lipstick, mascara, eyeliner, fake eyelashes, dark theme, soothing tones
+            </h2>
+          </div>
+        </div>
+        <div class="item-165-video">
+          <video poster="" id="165-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/165.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               High resolution photography portrait of a black man, symmetrical face pose, standing outside in the cold. Handsome. Powerful, black hair, professional Photography, Photorealistic
+            </h2>
+          </div>
+        </div>
+        <div class="item-124-video">
+          <video poster="" id="124-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/124.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               Early 80s poloraid color photo, headshot, medium brown hair with bangs, ((wearing a nurse outfit)), a woman in a hospital hall, bokeh, professional
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-184-video">
+          <video poster="" id="184-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/184.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               Man, middle age, long grey hair with man bun, tan skin, oval face, beard, dark eyes, wearing jacket
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-125-video">
+          <video poster="" id="125-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/125.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               Woman, serious,short hair,cinematic, Canon powershot, bokeh, filmic grain, motion blur, soft lighting, neon lights, uhd, 8k, ultrasharp, masterpiece, city street, nighttime, wearing a sweater, low brightness, dimly lit
+            </h2>
+          </div>
+        </div>
+        <div class="item-139-video">
+          <video poster="" id="139-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/139.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A woman wearing a golden dress by Madame Gres, soft lighting, professional Photography, Photorealistic, detailed
+            </h2>
+          </div>
+        </div>
+        <div class="item-211-video">
+          <video poster="" id="211-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/211.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A fat Asian man wearing a gold blue and green rubber apron, realistic skin, fine detail, in a restaurant
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-153-video">
+          <video poster="" id="153-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/153.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               French victoria secret model, bangs long dark hair, (((sitting backstage of fashion show in Paris))), nervous, natural aged skin texture, detailed face, 24mm, 4k textures, soft cinematic light, adobe lightroom
+            </h2>
+          </div>
+        </div>
+        <div class="item-227-video">
+          <video poster="" id="227-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/227.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A male samurai, ponytail, epic, ruins background, perfect composition, cinematic, moody, rule of thirds, majestic, detailed, sharp details
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-187-video">
+          <video poster="" id="1-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/187.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               An asian grandmother with a beautiful smile and delicate wrinkles, wearing floral shirt, 8k resolution, hyperdetailed photograph, beautiful lighting, dark contrast, deep shadows, award winning composition
+            </h2>
+          </div>
+        </div>
+        <div class="item-214-video">
+          <video poster="" id="214-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/214.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A Japanese girl, smile, twin braids hair, black hair, brown eyes, pink kimono, best quality, ultra-detailed, extremely delicate and beautiful, Japanese room
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-241-video">
+          <video poster="" id="241-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/241.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A 18yo boy, (sideburns, ginger facial stubble, short hair), skin imperfections, expressive, chill atmosphere, masterpiece, short hair, casual, classroom, shirt, pants
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-224-video">
+          <video poster="" id="224-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/224.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A 30 years old Russian farmer woman, in a rural Russian village in 1988 in autumn, style of wes Anderson
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-250-video">
+          <video poster="" id="250-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/250.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               Mr. Bean, short, neatly parted hair, wearing a signature tweed jacket, a thin red tie, 8k uhd, high quality, dramatic, cinematic
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-242-video">
+          <video poster="" id="242-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/242.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A woman,short hair, detailed skin texture,masterpiece, face focus, photorealistic, woman, 4k, HDR, backlighting, bloom, light, RAW color photo,(fully in frame:1.1), (blush:0.5), wearing a blouse, asian. happy, idol
+            </h2>
+          </div>
+        </div>
+        <div class="item-261-video">
+          <video poster="" id="261-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/261.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A man, solo, scruffy facial hair, dressed in a long-sleeved shirt, waistcoat, and a beanie, exuding a distinct 'off-the-grid' aura
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-286-video">
+          <video poster="" id="286-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/286.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A graceful ballerina, wavy brunette hair in a neat chignon, captivating almond-shaped hazel eyes, in a rosy tutu
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-303-video">
+          <video poster="" id="303-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/303.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A gorgeous 1950s americana vintage portrait of a boy, eyeshadow, wearing 1950s americana shirt with a maroon striped sweater vest and (skin-tight purple navy high-waisted   bell-bottom pants with a wide belt)), serious expression, subsurface scattering, f2, 35mm, film grain
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-291-video">
+          <video poster="" id="291-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/291.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A riya woman wearing elegant high-neck Kalamkari Dress (hand-painted fabric) with Raised chin, brown hair, black eyes, film grain, perfect eyes
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-332-video">
+          <video poster="" id="332-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/332.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               Studio photo of an old yet stylish grandpa, detailed, studio lighting, medium format
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-314-video">
+          <video poster="" id="314-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/314.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A middle-aged redhead woman taken at a convenience store during the night,exhibiting a grainy texture, jpg artifacts, film grain, gritty, raw aesthetic
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-341-video">
+          <video poster="" id="341-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/341.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A man Model wearing a pink jumper, Red Autumn Forest Background, Natural Lighting, chaos, minimalist, 1990s, (shot on Portra 400).
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-364-video">
+          <video poster="" id="364-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/364.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A young woman with dark blue bob hair with a steampunk bow, all in a post apocalyptic steampunk farwest decor
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-349-video">
+          <video poster="" id="349-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/349.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               Fashion Editorial. Castle edition, analog fashion portrait. Portra 400 high dpi scan. Beautiful American  young , twenty years old ,as Disney prince Philip sepia pastel colors , long dark red velvet cape
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-371-video">
+          <video poster="" id="371-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/371.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A black girl about 10 years old with hair in two Afro puffs. She is standing against a colorful graffiti wall. She is wearing a deep red coloured t-shirt
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-352-video">
+          <video poster="" id="352-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/352.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A baby-faced redhead boy taken at a convenience store during the night, exhibiting a grainy texture, jpg artifacts, film grain, gritty, raw aesthetic
+            </h2>
+          </div>
+        </div>
+        <div class="item-361-video">
+          <video poster="" id="361-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/361.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A very handsome elegant Asian man, dressed in a black suit and tie with short dark hair
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-390-video">
+          <video poster="" id="390-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/390.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A boy 7 years old, next to an mountains, in the style of portraits with soft lighting, he jiaying, qian xuan
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-397-video">
+          <video poster="" id="397-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/397.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A bearded man in elegant tweed suit, misty november day, gray and orange hues, fog, unusual angle, professional photography, shot with Hasselblad
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-411-video">
+          <video poster="" id="411-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/411.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A blonde woman is wearing a shiny satin shirt, 1980s N.Y the Bronx
+            </h2>
+          </div>
+        </div>
+
+
+        <div class="item-430-video">
+          <video poster="" id="430-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/430.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A handsome 35-year-old wide mountain man feature with a faded line-up style, light brown hair, bluish-grey eyes, wide barrel chest, wearing shirt, in an office
+            </h2>
+          </div>
+        </div>
+
+
+        <div class="item-434-video">
+          <video poster="" id="434-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/434.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A weathered 70 year old man with a long gray beard, on a boat in calm water on the louisiana bayou on a hot summer night, t-shirt and overalls, character, digital photo, low light
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-445-video">
+          <video poster="" id="445-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/445.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A Teen boy, pensive look, dark hair. Preppy sweater, collared shirt, moody room, 80s memorabilia
+            </h2>
+          </div>
+        </div>
+
+        <div class="item-447-video">
+          <video poster="" id="447-video" autoplay controls muted loop playsinline height="100%">
+            <source src="./static/videos/447.mp4"
+                    type="video/mp4">
+          </video>
+         <div class="card">
+            <h2 class="subtitle has-text-justified">
+               A handsome Japanese young male idol with blue hair wearing a T-shirt and denim shorts in a grocery store in Tokio in the 1970s
+            </h2>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+    <!-- Abstract. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Existing neural rendering-based text-to-3D-portrait generation methods typically
+            make use of human geometry prior and diffusion models to obtain guidance.
+            However, relying solely on geometry information introduces issues such as
+            the Janus problem, over-saturation, and over-smoothing.
+          </p>
+          <p>
+            We present  <span class="dnerf">Portrait3D</span>, a novel neural rendering-based framework with
+            a novel joint geometry-appearance prior to achieve text-to-3D-portrait
+            generation that overcomes the aforementioned issues. To accomplish this,
+            we train a 3D portrait generator, 3DPortraitGAN-Pyramid, as a robust
+            prior. This generator is capable of producing 360° canonical 3D portraits,
+            serving as a starting point for the subsequent diffusion-based generation
+            process. To mitigate the "grid-like" artifact caused by the high-frequency
+            information in the feature-map-based 3D representation commonly used by
+            most 3D-aware GANs, we integrate a novel pyramid tri-grid 3D representation
+            into 3DPortraitGAN-Pyramid. To generate 3D portraits from text, we first project
+            a randomly generated image aligned with the given prompt into the pre-trained
+            3DPortraitGAN-Pyramid's latent space. The resulting latent code is then used to
+            synthesize a pyramid tri-grid. Beginning with the obtained pyramid tri-grid, we
+            use score distillation sampling to distill the diffusion model's knowledge into
+            the pyramid tri-grid. Following that, we utilize the diffusion model to refine
+            the rendered images of the 3D portrait and then use these refined images as
+            training data to further optimize the pyramid tri-grid, effectively eliminating
+            issues with unrealistic color and unnatural artifacts.
+          </p>
+          <p>
+            Our experimental results show that  <span class="dnerf">Portrait3D</span> can produce realistic, high-quality,
+            and canonical 3D portraits that align with the prompt.
+          </p>
+        </div>
+      </div>
+    </div>
+    <!--/ Abstract. -->
+
+
+    <!-- Paper video. -->
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Video</h2>
+        <div class="publication-video">
+          <iframe src="https://www.youtube.com/embed/z7xWiD1p1_4?rel=0&amp;showinfo=0"
+                  frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+    <!--/ Paper video. -->
+
+
+    <!-- Pipeline. -->
+
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Pipeline</h2>
+        <div class="content has-text-justified">
+          <p>
+            The pipeline of  <span class="dnerf">Portrait3D</span>.
+            During the process of text-to-3D-portraits generation, given a text prompt,
+            we first randomly generate a portrait image by feeding the text prompt into
+            the diffusion model, and then project the generated image into the latent
+            space of our generator. The resulting latent code is used to synthesize the
+            corresponding <i>pyramid tri-grid</i>, which serves as the starting point
+            of the subsequent diffusion-based generation process. Following that, we
+            distill the knowledge of the diffusion model into the <i>pyramid tri-grid</i>
+            through score distillation sampling. This process produces a 3D portrait
+            that aligns with the input prompt. To further enhance the quality of the
+            obtained 3D portrait, we apply the diffusion model to process its rendered
+            images. The refined rendered images are then used as training data to
+            optimize the <i>pyramid tri-grid</i>, yielding the final results.
+          </p>
+          <figure class="image">
+            <img src="./static/images/pipeline.png" alt="Pipeline">
+          </figure>
+        </div>
+      </div>
+</div>
+
+
+    <!--/ Pipeline. -->
+
+       <!-- Comparison. -->
+
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Comparison</h2>
+        <div class="content has-text-justified">
+          <p>
+            Qualitative comparison to SOTA text-to-3D approaches: <a href="https://dreamfusion3d.github.io/">DreamFusion</a>,  <a href="https://github.com/luciddreamer-cvlab/LucidDreamer">LucidDreamer</a>,
+            <a href="https://github.com/TingtingLiao/TADA">TADA</a>, <a href="https://github.com/songrise/AvatarCraft">AvatarCraft</a>, <a href="https://github.com/magic-research/avatarstudio">AvatarStudio</a>, <a href="https://github.com/alvinliu0/HumanGaussian">HumanGaussian</a>, <a href="https://github.com/bytedance/AvatarVerse">AvatarVerse</a>, <a href="https://github.com/xhuangcv/humannorm">HumanNorm</a>,
+            <a href="https://seeavatar3d.github.io/">SEEAvatar</a>, <a href="https://github.com/HaoZhang990127/TECA">TECA</a>, and our method. The input prompt is presented at the top.
+          </p>
+          <figure class="image">
+            <img src="./static/images/Comparison.png" alt="Comparison">
+          </figure>
+        </div>
+
+        <div class="content has-text-justified">
+          <p>
+            Qualitative comparison to SOTA diffusion-based reconstruction approaches: <a href="https://github.com/One-2-3-45/One-2-3-45">One-2-3-45</a>,
+            <a href="https://github.com/dreamgaussian/dreamgaussian">DreamGaussian</a>, <a href="https://github.com/xxlong0/Wonder3D">Wonder3D</a>, <a href="https://github.com/liuyuan-pal/SyncDreamer">SyncDreamer</a> and <a href="https://github.com/huangyangyi/TeCH">TeCH</a>, and our method. The reference prompt
+            is presented at the top, and the reference image (which is also the generated image
+            used for image inversion in our framework) is presented at the left.
+          </p>
+          <figure class="image">
+            <img src="./static/images/comparison_reconstruct.png" alt="comparison_reconstruct">
+          </figure>
+        </div>
+
+
+      </div>
+      </div>
+
+
+  </div>
+
+  <!-- Comparison. -->
+
+    <!-- Results Gallery. -->
+
+    <div class="columns is-centered">
+      <div class="column is-5">
+        <h2 class="title is-3">Results Gallery</h2>
+        <div class="content has-text-justified">
+          <p>
+            We offer a gallery of 300 3D portraits (with their corresponding prompts)
+            generated by our method, all viewable and accessible on <a href="https://huggingface.co/datasets/onethousand/Portrait3D_gallery">huggingface</a>.
+            For visualization, please refer to our <a href="https://github.com/oneThousand1000/Portrait3D">github repository</a>.
+            (Bellow are some examples of the generated 3D portraits.)
+          </p>
+          <figure class="image">
+            <img src="./static/images/results.png" alt="Pipeline">
+          </figure>
+        </div>
+      </div>
+</div>
+
+
+    <!--/ Pipeline. -->
+
+
+</section>
+
+
+<section class="section">
+  <div class="container is-max-desktop">
+
+    <div class="columns is-centered">
+
+
+
+    <!-- Concurrent Work. -->
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Related Links</h2>
+
+        <div class="content has-text-justified">
+
+          <a href="https://arxiv.org/abs/2307.14770">3DPortraitGAN</a> is a 3D-aware generator capable
+          of generating 3D full-head avatars, and can function as a prior for 3D portrait generation.
+          We use 3DPortraitGAN as a prior in our method, and make a significant improvement in the
+          underlying 3D representation. Please refer to our paper for more details.
+        </div>
+      </div>
+    </div>
+    <!--/ Concurrent Work. -->
+
+   </div>
+  </div>
+
+
+</section>
+
+
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content">
+    <h2 class="title">BibTeX</h2>
+    If you find this project helpful to your research, please consider citing:
+    <pre><code>@article{Portrait3D_sig24,
+author = {Wu, Yiqian and Xu, Hao and Tang, Xiangjun and Chen, Xien and Tang, Siyun and Zhang, Zhebin and Li, Chen and Jin, Xiaogang},
+title = {Portrait3D: Text-Guided High-Quality 3D Portrait Generation Using Pyramid Representation and GANs Prior},
+year = {2024},
+publisher = {Association for Computing Machinery},
+volume = {43},
+number = {4},
+url = {https://doi.org/10.1145/3658162},
+doi = {10.1145/3658162},
+journal = {ACM Trans. Graph.},
+month = {Jul}
+}
+</code></pre>
+  </div>
+</section>
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This website is licensed under a <a rel="license"
+                                                href="http://creativecommons.org/licenses/by-sa/4.0/">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+          <p>
+           This page is borrowed from <a href="https://github.com/nerfies/nerfies.github.io">the Nerfies website</a>. We thank the authors for sharing it.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
